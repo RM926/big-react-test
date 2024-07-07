@@ -1,5 +1,6 @@
 import { Action } from 'shared/ReactTypes';
 import { FiberNode } from './fiber';
+import { Dispatch } from 'react';
 
 export interface Update<State> {
 	action: Action<State>;
@@ -9,6 +10,7 @@ export interface UpdateQueue<State> {
 	shared: {
 		pending: Update<State> | null;
 	};
+  dispatch: Dispatch<State> | null
 }
 
 // 创建
@@ -32,6 +34,7 @@ export const createUpdateQueue = <Action>() => {
 		shared: {
 			pending: null,
 		},
+    dispatch: null
 	};
 	return updateQueue;
 };
