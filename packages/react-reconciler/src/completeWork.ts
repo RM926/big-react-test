@@ -33,7 +33,9 @@ export const completeWork = (wip: FiberNode) => {
 				/*
           1.构建DOM 
          */
-				const instance = createInstance(wip.type, newProps);
+				// const instance = createInstance(wip.type, newProps);
+				const instance = createInstance(wip.type);
+
 				/**
 				 * 2.将DOM插入到DOM树中
 				 *  */
@@ -49,6 +51,7 @@ export const completeWork = (wip: FiberNode) => {
 				// mount
 				/*
           1.构建DOM 
+          toThink 不需要执行append的操作？？？
          */
 				const instance = createTextInstance(newProps.content);
 				wip.stateNode = instance;
@@ -57,7 +60,7 @@ export const completeWork = (wip: FiberNode) => {
 			return null;
 		case HostRoot:
 			bubbleProperties(wip);
-			return;
+			return null;
 
 		default:
 			if (__DEV__) {
@@ -65,6 +68,7 @@ export const completeWork = (wip: FiberNode) => {
 			}
 			break;
 	}
+  return null
 };
 
 /**

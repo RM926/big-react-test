@@ -31,8 +31,9 @@ export function commitMutationEffects(finishedWork: FiberNode) {
 		) {
 			nextEffect = child;
 		} else {
-			// 向上遍历
+			// 向上遍历,执行到没有subtreeFlags副作用的节点，即下面的节点没有变化，可以不用向下检测了
 			up: while (nextEffect !== null) {
+				debugger;
 				commitMutationEffectsOnFiber(nextEffect);
 				const sibling: FiberNode | null = nextEffect.sibling;
 
@@ -49,7 +50,6 @@ export function commitMutationEffects(finishedWork: FiberNode) {
 
 const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
 	const flags = finishedWork.flags;
-
 	if ((flags & Placement) !== NoFlags) {
 		commitPlacement(finishedWork);
 		finishedWork.flags &= ~Placement;
@@ -60,14 +60,15 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
 };
 
 const commitPlacement = (finishedWork: FiberNode) => {
+  debugger;
 	if (__DEV__) {
 		console.warn('执行Placement操作', finishedWork);
 	}
 
-	// parent Dom
+	// parent Dom 获取宿主环境的父级节点
 	const hostParent = getHostParent(finishedWork);
 
-	// finishedWork  DOM append parent DOM
+	// finishedWork  DOM append parent DOM 
 	if (hostParent !== null) {
 		appendPlacementNodeIntoContainer(finishedWork, hostParent);
 	}
@@ -82,6 +83,7 @@ const getHostParent = (fiber: FiberNode): Container | null => {
 			return parent.stateNode as Container;
 		}
 
+    // HostRoot ---> FiberRootNode
 		if (parentTag === HostRoot) {
 			return (parent.stateNode as FiberRootNode).container;
 		}
@@ -98,9 +100,9 @@ const appendPlacementNodeIntoContainer = (
 	finishedWork: FiberNode,
 	hostParent: Container,
 ) => {
-	// fiber host
+	// fiber host 传进来的finishedWork的节点并不一定是原生节点，可以执行append操作,所以需要遍历找到HostComponent和HostText类型的finishedWork.tag
 	if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-		appendChildToContainer(finishedWork.stateNode, hostParent);
+		appendChildToContainer(hostParent, finishedWork.stateNode);
 		return;
 	}
 

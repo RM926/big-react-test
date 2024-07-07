@@ -1,6 +1,6 @@
 import { Key, Props, ReactElementType, Ref } from 'shared/ReactTypes';
 import { FunctionComponent, HostComponent, WorkTag } from './workTags';
-import { Flags, NoFlags } from './fiberFlags';
+import { Flags, NoFlags, Placement } from './fiberFlags';
 import { Container } from 'hostConfig';
 
 export class FiberNode {
@@ -102,7 +102,6 @@ export const createWorkInProgress = (
 		// mount
 		wip = new FiberNode(current.tag, pendingProps, current.key);
 		wip.stateNode = current.stateNode;
-
 		wip.alternate = current;
 		current.alternate = wip;
 	} else {
