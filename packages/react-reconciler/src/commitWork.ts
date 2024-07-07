@@ -33,7 +33,7 @@ export function commitMutationEffects(finishedWork: FiberNode) {
 		} else {
 			// 向上遍历,执行到没有subtreeFlags副作用的节点，即下面的节点没有变化，可以不用向下检测了
 			up: while (nextEffect !== null) {
-				debugger;
+				// debugger;
 				commitMutationEffectsOnFiber(nextEffect);
 				const sibling: FiberNode | null = nextEffect.sibling;
 
@@ -60,7 +60,7 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
 };
 
 const commitPlacement = (finishedWork: FiberNode) => {
-  debugger;
+  // debugger;
 	if (__DEV__) {
 		console.warn('执行Placement操作', finishedWork);
 	}

@@ -73,7 +73,6 @@ function renderRoot(root: FiberRootNode) {
 	const finishedWork = root.current.alternate;
 	root.finishedWork = finishedWork;
 
-	debugger;
 	/** wip fiberNode 树，树中包含了flag标记 */
 	commitRoot(root);
 }
@@ -126,7 +125,6 @@ function performUnitOfWork(fiber: FiberNode) {
 
 	if (next === null) {
 		//说明没有子fiber,递归到最深层,开始向上回溯,执行completeWork流程
-		debugger;
 		completeUnitOfWork(fiber);
 	} else {
 		workInProgress = next as FiberNode;
