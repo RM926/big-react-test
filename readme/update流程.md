@@ -70,12 +70,14 @@ update流程和mount流程的区别
 <div onClick={() => updaet(1)}></div>
 ```
 
-- render阶段触发的更新
+- render阶段触发的更新（todo）
 
 ```jsx
 function App(){
     const [num,setNum] = useState(0)
+    // 触发更新
     setNum(100)
+    return <div>{num}</div>
 }
 ```
 
