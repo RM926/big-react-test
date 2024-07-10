@@ -20,6 +20,8 @@ export class FiberNode {
 	memoizedState: any;
 	updateQueue: unknown;
 
+  deletions: FiberNode[] | null; // 需要删除的子fiber节点
+
 	alternate: FiberNode | null; // 交替,代替者
 
 	flags: Flags;
@@ -59,6 +61,8 @@ export class FiberNode {
 		this.flags = NoFlags;
 		// 子树是否有副作用,在completeWork流程中，如果子树有副作用，冒泡到父级节点，方便查找副作用
 		this.subtreeFlags = NoFlags;
+    // 子树是否有需要删除的Fiber节点
+    this.deletions = null
 	}
 }
 
@@ -109,6 +113,7 @@ export const createWorkInProgress = (
 		wip.pendingProps = pendingProps;
 		wip.flags = NoFlags;
 		wip.subtreeFlags = NoFlags;
+    wip.deletions = null
 	}
 	wip.type = current.type;
 	wip.updateQueue = current.updateQueue;

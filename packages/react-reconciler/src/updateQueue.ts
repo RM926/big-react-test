@@ -1,6 +1,6 @@
 import { Action } from 'shared/ReactTypes';
 import { FiberNode } from './fiber';
-import { Dispatch } from 'react';
+import { Dispatch } from 'react/src/currentDispatcher';
 
 export interface Update<State> {
 	action: Action<State>;

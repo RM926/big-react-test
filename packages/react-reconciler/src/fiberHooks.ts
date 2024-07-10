@@ -6,6 +6,7 @@ import {
 	createUpdate,
 	createUpdateQueue,
 	enqueueUpdate,
+  processUpdateQueue,
 } from './updateQueue';
 import { Action } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
@@ -22,6 +23,11 @@ let currentlyRenderingFiber: FiberNode | null = null;
  * 当进入function Component的beginWork的时候，处理hook链表中的每个hook，需要有个指针来记录当前的hook
  */
 let workInProgressHook: Hook | null = null;
+
+/**
+ * update流程当前的Hook
+ */
+let currentHook: Hook | null = null;
 
 /**
  *  * * * * * * * * * *
@@ -42,14 +48,16 @@ export function renderWithHooks(wip: FiberNode) {
 	// 赋值操作
 	currentlyRenderingFiber = wip;
 
+	// 重置，保存的是hooks链表,在mount流程的时候，是新创建；而update需要从
 	wip.memoizedState = null;
 	const current = wip.alternate;
 
 	if (current !== null) {
 		// update
+		currentDispatcher.current = HooksDispatcherOnUpdate;
 	} else {
 		// mount
-		currentDispatcher.current = HookDispatcherOnMount;
+		currentDispatcher.current = HooksDispatcherOnMount;
 	}
 
 	const Component = wip.type;
@@ -58,13 +66,90 @@ export function renderWithHooks(wip: FiberNode) {
 
 	// 重置操作
 	currentlyRenderingFiber = null;
+  workInProgressHook = null;
+  currentHook = null
 
 	return children;
 }
 
-const HookDispatcherOnMount: Dispatcher = {
+const HooksDispatcherOnMount: Dispatcher = {
 	useState: mountState,
 };
+
+const HooksDispatcherOnUpdate: Dispatcher = {
+	useState: updateState,
+};
+
+function updateState<State>(
+	initialState: (() => State) | State,
+): [State, Dispatch<State>] {
+	const hook = updateWorkInProgressHook();
+  // 计算新的state的逻辑
+  const queue = hook.updateQueue as UpdateQueue<State>
+  const pending = queue.shared.pending
+
+  if(pending !== null){
+    const { memoizedState} = processUpdateQueue(hook.memoizedState,pending)
+    hook.memoizedState = memoizedState
+  }
+	return [hook.memoizedState,queue.dispatch as Dispatch<State>];
+}
+
+function updateWorkInProgressHook(): Hook {
+  // todo Render阶段触发的更新
+  // function App(){
+  //   const [num,setNum] = useState(0)
+  //   // 触发更新
+  //   setNum(100)
+  //   return <div>{num}</div>
+  // }
+	let nextCurrentHook: Hook | null = null;
+	if (currentHook === null) {
+		// 这是这个FC update时第一个hook
+		const current = currentlyRenderingFiber?.alternate;
+		if (current !== null) {
+			nextCurrentHook = current?.memoizedState;
+		} else {
+			// mount mount阶段current===null,是一些边界情况
+			nextCurrentHook = null;
+		}
+	} else {
+		// 这是FC update时后续的Hook
+		nextCurrentHook = currentHook.next;
+	}
+
+	if (nextCurrentHook === null) {
+		/**
+		 * mount u1 u2 u3
+		 * update u1 u2 u3 u4 --> 多一个hook
+		 * 如果nextCurrentHook === null的情况，说明mount阶段和update阶段的hook数量一样
+		 */
+		throw new Error(
+			`组件${currentlyRenderingFiber?.type}本次执行时的Hook比上次执行的多`,
+		);
+	}
+
+	currentHook = nextCurrentHook as Hook;
+	const newHook: Hook = {
+		memoizedState: currentHook.memoizedState,
+		updateQueue: currentHook.updateQueue,
+		next: null,
+	};
+
+	if (workInProgressHook === null) {
+		if (currentlyRenderingFiber === null) {
+			throw new Error('请在函数组件内调用hook');
+		} else {
+			workInProgressHook = newHook;
+			currentlyRenderingFiber.memoizedProps = workInProgressHook;
+		}
+	} else {
+		// mount时，后续的hook
+		workInProgressHook.next = newHook;
+		workInProgressHook = newHook;
+	}
+	return workInProgressHook;
+}
 
 function mountState<State>(
 	initialState: (() => State) | State,
@@ -79,11 +164,12 @@ function mountState<State>(
 	}
 	const queue = createUpdateQueue<State>();
 	hook.updateQueue = queue;
+	hook.memoizedState = memoizedState;
 
-  //@ts-ignore
-  // toThink 函数的bind方法，代入参数，此时是没有执行，只是将对应的实时参数赋予
-  const dispatch = dispatchSetState.bind(null,currentlyRenderingFiber,queue)
-  queue.dispatch = dispatch
+	//@ts-ignore
+	// toThink 函数的bind方法，代入参数，此时是没有执行，只是将对应的实时参数赋予
+	const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
+	queue.dispatch = dispatch;
 	return [memoizedState, dispatch];
 }
 
@@ -92,7 +178,7 @@ function dispatchSetState<State>(
 	updateQueue: UpdateQueue<State>,
 	action: Action<State>,
 ) {
-  // toThink 首屏渲染的更新流程
+	// toThink 首屏渲染的更新流程
 	// const update = createUpdate<ReactElementType | null>(element);
 	// 	enqueueUpdate(
 	// 		hostRootFiber.updateQueue as UpdateQueue<ReactElementType | null>,
@@ -102,7 +188,7 @@ function dispatchSetState<State>(
 	// 	scheduleUpdateOnFiber(hostRootFiber);
 	const update = createUpdate(action);
 	enqueueUpdate(updateQueue, update);
-  scheduleUpdateOnFiber(fiber)
+	scheduleUpdateOnFiber(fiber);
 }
 
 function mountWorkInProgressHook(): Hook {

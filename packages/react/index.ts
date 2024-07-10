@@ -1,5 +1,8 @@
-import currentDispatcher, { Dispatcher, resolveDispatcher } from './src/currentDispatcher';
-import { jsxDEV } from './src/jsx';
+import currentDispatcher, {
+	Dispatcher,
+	resolveDispatcher,
+} from './src/currentDispatcher';
+import { jsx,isValidElement as isValidElementFn } from './src/jsx';
 
 /**
  *  * * * * * * * * * * * * * * * * *         * * * * * * * * * * * * * * * * *
@@ -37,16 +40,22 @@ export const useState: Dispatcher['useState'] = (initialState) => {
 
 /** 内部数据共享层 */
 export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRE = {
-  currentDispatcher
+	currentDispatcher,
 };
 
-export default {
-	version: '0.0.0',
-	/**
-	 * 编译时：
-	 * jsx语法在babel的作用下会被转化成React.createElement方法的运行,并且传入参数为(type,config)
-	 * 这就是为什么我们写了jsx语法的代码,在控制台打印出来是一个对象的原因
-	 *
-	 */
-	createElement: jsxDEV,
-};
+export const version = '0.0.0';
+// TODO: 根据环境区分使用jsx/jsxDEV
+export const createElement = jsx;
+
+export const isValidElement = isValidElementFn
+
+// export default {
+// 	version: '0.0.0',
+// 	/**
+// 	 * 编译时：
+// 	 * jsx语法在babel的作用下会被转化成React.createElement方法的运行,并且传入参数为(type,config)
+// 	 * 这就是为什么我们写了jsx语法的代码,在控制台打印出来是一个对象的原因
+// 	 *
+// 	 */
+// 	createElement: jsxDEV
+// };
